@@ -25,7 +25,7 @@ export async function createCustomer(req, res) {
   const { name, phone, cpf, birthday } = req.body;
   try {
     const existingCostumer = await db.query(
-      `SELECT * FROM customers WHERE cpf = $1`,
+      `SELECT * FROM customers WHERE cpf = $1;`,
       [cpf]
     );
     if (existingCostumer.rows[0])
@@ -43,19 +43,24 @@ export async function createCustomer(req, res) {
 
 export async function editCustomer(req, res) {
   const { name, phone, cpf, birthday } = req.body;
+  const { id } = req.params;
   try {
-    const existingCostumer = await db.query(
-      `SELECT * FROM customers WHERE cpf = $1`,
-      [cpf]
+    const atualCustomer = await db.query(
+      `SELECT * FROM customers WHERE id=$1;`,
+      [id]
     );
-    if (existingCostumer.rows[0])
-      return res.status(409).send("CPF já existente");
+    if (atualCustomer.rows[0]) {
+      console.log("costumer existe");
+      await db.query(
+        `UPDATE customers SET name=$2, phone=$3,cpf=$4, birthday=$5 WHERE id=$1;`,
+        [id, name, phone, cpf, birthday]
+      );
 
-    await db.query(
-      `INSERT INTO customers (name, phone, cpf, birthday) VALUES ($1, $2, $3, $4);`,
-      [name, phone, cpf, birthday]
-    );
-    res.sendStatus(200);
+      res.sendStatus(200);
+    } else {
+      console.log("customoer não existe");
+      res.sendStatus(404);
+    }
   } catch (err) {
     res.status(500).send(err.message);
   }
