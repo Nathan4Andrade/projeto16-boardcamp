@@ -1,11 +1,17 @@
 import { Router } from "express";
 import { validateSchema } from "../middlewares/validateSchema.middleware.js";
 import { customerSchema } from "../schemas/customer.schema.js";
+import {
+  createCustomer,
+  editCustomer,
+  getCustomerById,
+  getCustomers,
+} from "../controllers/customers.controller.js";
 
 const customerRouter = Router();
 
-customerRouter.get("/customer", getCustomers);
-customerRouter.get("/customer:id", getCustomerById);
+customerRouter.get("/customers", getCustomers);
+customerRouter.get("/customers/:id", getCustomerById);
 customerRouter.post(
   "/customers",
   validateSchema(customerSchema),
