@@ -45,10 +45,6 @@ export async function editCustomer(req, res) {
   const { name, phone, cpf, birthday } = req.body;
   const { id } = req.params;
 
-  /*   if (!validateInput(name, phone, cpf, birthday)) {
-    return res.sendStatus(400);
-  } */
-
   try {
     const existingCustomer = await db.query(
       "SELECT * FROM customers WHERE cpf = $1 AND id <> $2;",
