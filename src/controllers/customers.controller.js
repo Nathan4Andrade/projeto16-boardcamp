@@ -44,24 +44,29 @@ export async function createCustomer(req, res) {
 export async function editCustomer(req, res) {
   const { name, phone, cpf, birthday } = req.body;
   const { id } = req.params;
-  try {
-    const atualCustomer = await db.query(
-      `SELECT * FROM customers WHERE id=$1;`,
-      [id]
-    );
-    if (atualCustomer.rows[0]) {
-      console.log("costumer existe");
-      await db.query(
-        `UPDATE customers SET name=$2, phone=$3,cpf=$4, birthday=$5 WHERE id=$1;`,
-        [id, name, phone, cpf, birthday]
-      );
 
-      res.sendStatus(200);
-    } else {
-      console.log("customoer não existe");
-      res.sendStatus(404);
+  /*   if (!validateInput(name, phone, cpf, birthday)) {
+    return res.sendStatus(400);
+  } */
+
+  try {
+    const existingCustomer = await db.query(
+      "SELECT * FROM customers WHERE cpf = $1 AND id <> $2;",
+      [cpf, id]
+    );
+
+    if (existingCustomer.rows.length > 0) {
+      return res.sendStatus(409);
     }
+
+    await db.query(
+      "UPDATE customers SET name=$2, phone=$3, cpf=$4, birthday=$5 WHERE id=$1;",
+      [id, name, phone, cpf, birthday]
+    );
+
+    return res.sendStatus(200);
   } catch (err) {
-    res.status(500).send(err.message);
+    console.error("Erro ao atualizar cliente:", err);
+    return res.status(500).send(err.message);
   }
 }
