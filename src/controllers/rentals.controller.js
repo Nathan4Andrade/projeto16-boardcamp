@@ -2,7 +2,10 @@ import { db } from "../database/database.connection.js";
 
 export async function getRentals(req, res) {
   try {
-    res.send("getRentals");
+    const rentals = await db.query(
+      `SELECT rentals.*, customers.id, customers.name, games.id, games.name FROM rentals JOIN customers ON rentals."customerId" = customers.id LEFT JOIN games ON rentals."gameId" = games.id;`
+    );
+    res.send(rentals.rows);
   } catch (err) {
     res.status(500).send(err.message);
   }
