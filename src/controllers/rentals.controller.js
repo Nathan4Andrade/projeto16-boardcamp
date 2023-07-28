@@ -3,7 +3,7 @@ import { db } from "../database/database.connection.js";
 export async function getRentals(req, res) {
   try {
     const rentals = await db.query(
-      `SELECT rentals.*, customers.id, customers.name, games.id, games.name FROM rentals JOIN customers ON rentals."customerId" = customers.id LEFT JOIN games ON rentals."gameId" = games.id;`
+      `SELECT rentals.*, JSON_BUILD_OBJECT('id', customers.id, 'name', customers.name) AS customer, JSON_BUILD_OBJECT('id', games.id, 'name', games.name) AS game FROM rentals JOIN customers ON rentals."customerId" = customers.id LEFT JOIN games ON rentals."gameId" = games.id;`
     );
     res.send(rentals.rows);
   } catch (err) {
@@ -43,6 +43,7 @@ export async function createRental(req, res) {
     );
     const price = gamePrice.rows[0].pricePerDay;
     const originalPrice = price * daysRented;
+
     await db.query(
       `INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee") VALUES ($1, $2, NOW(), $3, null, $4, null)`,
       [customerId, gameId, daysRented, originalPrice]
