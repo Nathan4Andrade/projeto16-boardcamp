@@ -102,7 +102,7 @@ export async function endRental(req, res) {
 
     console.log(delayFee);
     await db.query(
-      `UPDATE rentals SET "returnDate"=TO_CHAR($1, 'YYYY-MM-DD'), "delayFee"=$2  WHERE id=$3`,
+      `UPDATE rentals SET "returnDate"=$1, "delayFee"=$2  WHERE id=$3`,
       [returnDate, delayFee, id]
     );
 
