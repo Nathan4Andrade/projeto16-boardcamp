@@ -2,7 +2,9 @@ import { db } from "../database/database.connection.js";
 
 export async function getCustomers(req, res) {
   try {
-    const customers = await db.query(`SELECT * FROM customers;`);
+    const customers = await db.query(
+      `SELECT id, name, phone, cpf, TO_CHAR(birthday, 'YYYY-MM-DD') AS birthday FROM customers;`
+    );
     res.send(customers.rows);
   } catch (err) {
     res.status(500).send(err.message);
@@ -12,9 +14,10 @@ export async function getCustomers(req, res) {
 export async function getCustomerById(req, res) {
   const { id } = req.params;
   try {
-    const customer = await db.query(`SELECT * FROM customers WHERE id=$1;`, [
-      id,
-    ]);
+    const customer = await db.query(
+      `SELECT id, name, phone, cpf, TO_CHAR(birthday, 'YYYY-MM-DD') AS birthday FROM customers WHERE id=$1;`,
+      [id]
+    );
     if (!customer.rows[0]) res.sendStatus(404);
     res.send(customer.rows[0]);
   } catch (err) {
@@ -25,7 +28,7 @@ export async function createCustomer(req, res) {
   const { name, phone, cpf, birthday } = req.body;
   try {
     const existingCostumer = await db.query(
-      `SELECT * FROM customers WHERE cpf = $1;`,
+      `SELECT id, name, phone, cpf, TO_CHAR(birthday, 'YYYY-MM-DD') AS birthday FROM customers WHERE cpf = $1;`,
       [cpf]
     );
     if (existingCostumer.rows[0])
@@ -48,7 +51,7 @@ export async function editCustomer(req, res) {
 
   try {
     const existingCustomer = await db.query(
-      "SELECT * FROM customers WHERE cpf = $1 AND id <> $2;",
+      `SELECT id, name, phone, cpf, TO_CHAR(birthday, 'YYYY-MM-DD') AS birthday FROM customers WHERE cpf = $1 AND id <> $2;`,
       [cpf, id]
     );
 

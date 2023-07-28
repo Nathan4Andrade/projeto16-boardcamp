@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 export async function getRentals(req, res) {
   try {
     const rentals = await db.query(
-      `SELECT rentals.*, JSON_BUILD_OBJECT('id', customers.id, 'name', customers.name) AS customer, JSON_BUILD_OBJECT('id', games.id, 'name', games.name) AS game FROM rentals 
+      `SELECT rentals.*, TO_CHAR(rentals."rentDate", 'YYYY-MM-DD') AS "rentDate", JSON_BUILD_OBJECT('id', customers.id, 'name', customers.name) AS customer, JSON_BUILD_OBJECT('id', games.id, 'name', games.name) AS game FROM rentals 
       JOIN customers ON rentals."customerId" = customers.id 
       LEFT JOIN games ON rentals."gameId" = games.id;`
     );
