@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 export async function getRentals(req, res) {
   try {
     const rentals = await db.query(
-      `SELECT rentals.*, TO_CHAR(rentals."rentDate", 'YYYY-MM-DD') AS "rentDate", JSON_BUILD_OBJECT('id', customers.id, 'name', customers.name) AS customer, JSON_BUILD_OBJECT('id', games.id, 'name', games.name) AS game FROM rentals 
+      `SELECT rentals.*, TO_CHAR(rentals."rentDate", 'YYYY-MM-DD') AS "rentDate",  TO_CHAR(rentals."returnDate", 'YYYY-MM-DD') AS "returnDate", JSON_BUILD_OBJECT('id', customers.id, 'name', customers.name) AS customer, JSON_BUILD_OBJECT('id', games.id, 'name', games.name) AS game FROM rentals 
       JOIN customers ON rentals."customerId" = customers.id 
       LEFT JOIN games ON rentals."gameId" = games.id;`
     );
@@ -50,7 +50,7 @@ export async function createRental(req, res) {
     const originalPrice = price * daysRented;
 
     await db.query(
-      `INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee") VALUES ($1, $2, $3, $4, null, $5, null)`,
+      `INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate" , "originalPrice", "delayFee") VALUES ($1, $2, $3, $4, null, $5, null)`,
       [customerId, gameId, rentDate, daysRented, originalPrice]
     );
 
@@ -86,7 +86,6 @@ export async function endRental(req, res) {
       "day"
     );
     const differenceInDays = returnDate.diff(expectedDay, "day");
-
     console.log("dia alugado: " + rentDate.format("DD-MM-YYYY"));
     console.log("dias de aluguel: " + daysRented);
     console.log("dia esperado: " + expectedDay.format("DD-MM-YYYY"));
@@ -94,11 +93,16 @@ export async function endRental(req, res) {
     console.log("diferença de dias:", differenceInDays);
 
     const originalPrice = existingRental.rows[0].originalPrice;
-    const delayFeeCalc = (differenceInDays - daysRented) * originalPrice;
+    const delayFeeCalc =
+      differenceInDays > 0 ? differenceInDays * dailyPrice : 0;
+
+    const dailyPrice = originalPrice / daysRented; // Calcula o preço por dia do jogo
+
     const delayFee = delayFeeCalc > 0 ? delayFeeCalc : 0;
+
     console.log(delayFee);
     await db.query(
-      `UPDATE rentals SET "returnDate"=$1, "delayFee"=$2  WHERE id=$3`,
+      `UPDATE rentals SET "returnDate"=TO_CHAR($1, 'YYYY-MM-DD'), "delayFee"=$2  WHERE id=$3`,
       [returnDate, delayFee, id]
     );
 
