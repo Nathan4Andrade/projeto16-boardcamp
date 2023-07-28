@@ -17,7 +17,7 @@ export async function getRentals(req, res) {
 export async function createRental(req, res) {
   const { customerId, gameId, daysRented } = req.body;
 
-  const rentDate = dayjs().format("DD-MM-YYYY");
+  const rentDate = dayjs().format("YYYY-MM-DD");
   console.log(rentDate);
   try {
     //verifica se daysRented é maior que 0
