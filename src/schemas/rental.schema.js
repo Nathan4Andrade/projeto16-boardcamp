@@ -5,3 +5,8 @@ export const rentalSchema = joi.object({
   gameId: joi.number().required(),
   daysRented: joi.number().required(),
 });
+
+export const endRentalSchema = joi.object({
+  returnDate: joi.date().required(),
+  delayFee: joi.number().required(),
+});

@@ -1,4 +1,5 @@
 import { db } from "../database/database.connection.js";
+import dayjs from "dayjs";
 
 export async function getRentals(req, res) {
   try {
@@ -13,6 +14,7 @@ export async function getRentals(req, res) {
 
 export async function createRental(req, res) {
   const { customerId, gameId, daysRented } = req.body;
+  const rentDate = dayjs().format("DD-MM-YYYY");
   try {
     //verifica se daysRented é maior que 0
     if (daysRented <= 0) return res.sendStatus(400);
@@ -45,8 +47,8 @@ export async function createRental(req, res) {
     const originalPrice = price * daysRented;
 
     await db.query(
-      `INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee") VALUES ($1, $2, NOW(), $3, null, $4, null)`,
-      [customerId, gameId, daysRented, originalPrice]
+      `INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee") VALUES ($1, $2, $3, $4, null, $5, null)`,
+      [customerId, gameId, rentDate, daysRented, originalPrice]
     );
     res.sendStatus(201);
   } catch (err) {
@@ -55,8 +57,44 @@ export async function createRental(req, res) {
 }
 
 export async function endRental(req, res) {
+  const { id } = req.params;
+
+  const returnDate = dayjs();
   try {
-    res.send("endRental");
+    const existingRental = await db.query(
+      `SELECT * FROM rentals WHERE id = $1;`,
+      [id]
+    );
+    
+    if (!existingRental.rows[0])
+      return res.status(404).send("Rental não existe");
+    if (existingRental.rows[0].returnDate)
+      return res.status(400).send("Rental já devolvido");
+
+    const rentDate = dayjs(existingRental.rows[0].rentDate);
+    const daysRented = existingRental.rows[0].daysRented;
+    const expectedDay = dayjs(existingRental.rows[0].rentDate).add(
+      daysRented,
+      "day"
+    );
+    const differenceInDays = returnDate.diff(rentDate, "day");
+
+    console.log("dia alugado: " + rentDate.format("DD-MM-YYYY"));
+    console.log("dias de aluguel: " + daysRented);
+    console.log("dia esperado: " + expectedDay.format("DD-MM-YYYY"));
+    console.log("dia devolvido: " + returnDate.format("DD-MM-YYYY"));
+    console.log("diferença de dias:", differenceInDays);
+
+    const originalPrice = existingRental.rows[0].originalPrice;
+    const delayFeeCalc = (differenceInDays - daysRented) * originalPrice;
+    const delayFee = delayFeeCalc > 0 ? delayFeeCalc : 0;
+    console.log(delayFee);
+    await db.query(
+      `UPDATE rentals SET "returnDate"=$1, "delayFee"=$2  WHERE id=$3`,
+      [returnDate, delayFee, id]
+    );
+
+    res.send(existingRental.rows[0]);
   } catch (err) {
     res.status(500).send(err.message);
   }
