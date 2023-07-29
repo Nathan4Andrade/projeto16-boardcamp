@@ -37,8 +37,8 @@ export async function createRental(req, res) {
       [gameId]
     );
     if (!exisitingGame.rows[0]) return res.status(400).send("Jogo não existe");
-
-    if ((exisitingGame.rows[0].stockTotal = 0))
+    console.log(exisitingGame.rows[0].stockTotal);
+    if (exisitingGame.rows[0].stockTotal === 0)
       return res.status(400).send("Jogo sem estoque");
 
     // calcula o valor do aluguel
@@ -91,14 +91,8 @@ export async function endRental(req, res) {
     console.log("dia esperado: " + expectedDay.format("DD-MM-YYYY"));
     console.log("dia devolvido: " + returnDate.format("DD-MM-YYYY"));
     console.log("diferença de dias:", differenceInDays);
-
-    const originalPrice = existingRental.rows[0].originalPrice;
-    const delayFeeCalc =
-      differenceInDays > 0 ? differenceInDays * dailyPrice : 0;
-
-    const dailyPrice = originalPrice / daysRented; // Calcula o preço por dia do jogo
-
-    const delayFee = delayFeeCalc > 0 ? delayFeeCalc : 0;
+    let delayFee = 0;
+    if (differenceInDays > 0) delayFee = originalPrice * differenceInDays;
 
     console.log(delayFee);
     await db.query(
