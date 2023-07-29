@@ -66,7 +66,7 @@ export async function createRental(req, res) {
 
 export async function endRental(req, res) {
   const { id } = req.params;
-
+  //const returnDate = dayjs("2023-08-02");
   const returnDate = dayjs();
   try {
     const existingRental = await db.query(
@@ -76,40 +76,40 @@ export async function endRental(req, res) {
 
     if (!existingRental.rows[0])
       return res.status(404).send("Rental não existe");
+
     if (existingRental.rows[0].returnDate)
       return res.status(400).send("Rental já devolvido");
 
-    const rentDate = dayjs(existingRental.rows[0].rentDate);
-    const daysRented = existingRental.rows[0].daysRented;
-    const expectedDay = dayjs(existingRental.rows[0].rentDate).add(
-      daysRented,
-      "day"
+    const exisitingGame = await db.query(
+      `SELECT id, "stockTotal", "pricePerDay" FROM games WHERE id = $1;`,
+      [existingRental.rows[0].gameId]
     );
-    const originalPrice = existingRental.rows[0].originalPrice;
 
+    const rental = existingRental.rows[0];
+    const rentDate = dayjs(rental.rentDate);
+    const daysRented = rental.daysRented;
+    const expectedDay = dayjs(rental.rentDate).add(daysRented, "day");
+    const pricePerDay = exisitingGame.rows[0].pricePerDay;
     const differenceInDays = returnDate.diff(expectedDay, "day");
+    const delayFee = differenceInDays > 0 ? pricePerDay * differenceInDays : 0;
+
     console.log("dia alugado: " + rentDate.format("DD-MM-YYYY"));
     console.log("dias de aluguel: " + daysRented);
-    console.log("preço original: " + originalPrice);
+    console.log("preço original: " + pricePerDay);
     console.log("dia esperado: " + expectedDay.format("DD-MM-YYYY"));
     console.log("dia devolvido: " + returnDate.format("DD-MM-YYYY"));
-    console.log("diferença de dias:", differenceInDays);
-    let delayFee = 0;
-    if (differenceInDays > 0) delayFee = originalPrice * differenceInDays;
+    console.log("diferença de dias em atraso:", differenceInDays);
 
-    console.log(delayFee);
+    console.log("taxa de atraso " + delayFee);
+
     await db.query(
       `UPDATE rentals SET "returnDate"=$1, "delayFee"=$2  WHERE id=$3`,
       [returnDate, delayFee, id]
     );
 
-    const exisitingGame = await db.query(
-      `SELECT id, "stockTotal" FROM games WHERE id = $1;`,
-      [existingRental.rows[0].gameId]
-    );
     await db.query(`UPDATE games SET "stockTotal" = $1 WHERE id=$2`, [
       exisitingGame.rows[0].stockTotal + 1,
-      existingRental.rows[0].gameId,
+      rental.gameId,
     ]);
 
     res.sendStatus(200);
