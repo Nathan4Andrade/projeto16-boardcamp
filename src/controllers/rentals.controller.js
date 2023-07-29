@@ -85,9 +85,12 @@ export async function endRental(req, res) {
       daysRented,
       "day"
     );
+    const originalPrice = existingRental.rows[0].originalPrice;
+
     const differenceInDays = returnDate.diff(expectedDay, "day");
     console.log("dia alugado: " + rentDate.format("DD-MM-YYYY"));
     console.log("dias de aluguel: " + daysRented);
+    console.log("preço original: " + originalPrice);
     console.log("dia esperado: " + expectedDay.format("DD-MM-YYYY"));
     console.log("dia devolvido: " + returnDate.format("DD-MM-YYYY"));
     console.log("diferença de dias:", differenceInDays);
